@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEEDME — you don't know what to eat. we do.</title>
+<style>
+  :root{
+    --bg:#fff6ec;
+    --ink:#3d2b1f;
+    --ink-soft:#8a6f5c;
+    --accent:#ff7a45;
+    --accent-deep:#e8582a;
+    --card:#ffffff;
+    --shadow:0 10px 30px rgba(120,72,30,.12);
+    --radius:24px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,"Poppins",sans-serif;
+    background:
+      radial-gradient(circle at 12% 18%, #ffe3c4 0%, transparent 42%),
+      radial-gradient(circle at 88% 82%, #ffe0d6 0%, transparent 45%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    overflow-x:hidden;
+    position:relative;
+  }
+  .particle{
+    position:fixed;font-size:1.6rem;opacity:.15;pointer-events:none;
+    animation:floaty 9s ease-in-out infinite alternate;
+    z-index:0;user-select:none;
+  }
+  @keyframes floaty{
+    from{transform:translateY(0) rotate(-8deg);}
+    to{transform:translateY(-26px) rotate(10deg);}
+  }
+  .stage{
+    position:relative;z-index:1;width:100%;max-width:720px;
+    padding:32px 20px;text-align:center;
+  }
+  .screen{display:none;animation:fadeUp .45s ease both;}
+  .screen.active{display:block;}
+  @keyframes fadeUp{
+    from{opacity:0;transform:translateY(18px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+
+  /* ---------- shared personality line ---------- */
+  .feedy-says{
+    margin-top:22px;font-size:1.15rem;font-weight:700;color:var(--accent-deep);
+    min-height:1.6em;opacity:0;transform:translateY(6px);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .feedy-says.show{opacity:1;transform:translateY(0);}
+
+  /* ---------- TITLE ---------- */
+  .logo{
+    font-size:clamp(3.4rem,10vw,5.5rem);
+    font-weight:900;letter-spacing:-2px;line-height:1;
+    background:linear-gradient(135deg,var(--accent),#ffb25e 60%,var(--accent-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 6px 0 rgba(232,88,42,.15));
+    animation:wobble 4s ease-in-out infinite;
+  }
+  @keyframes wobble{
+    0%,100%{transform:rotate(-1.2deg);}
+    50%{transform:rotate(1.2deg);}
+  }
+  .tagline{margin-top:14px;font-size:1.3rem;font-weight:700;}
+  .subline{margin-top:8px;color:var(--ink-soft);font-size:1rem;}
+  .hero-food{
+    font-size:clamp(5rem,16vw,7.5rem);margin:26px 0 10px;display:inline-block;
+    filter:drop-shadow(0 12px 18px rgba(120,72,30,.22));
+    animation:bob 2.6s ease-in-out infinite;
+  }
+  @keyframes bob{
+    0%,100%{transform:translateY(0) rotate(-4deg);}
+    50%{transform:translateY(-14px) rotate(4deg);}
+  }
+  .btn-big{
+    margin-top:22px;font-size:1.35rem;font-weight:800;letter-spacing:1px;
+    color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-deep));
+    border:none;border-radius:999px;padding:20px 52px;cursor:pointer;
+    box-shadow:0 14px 28px rgba(232,88,42,.35);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-big:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 20px 36px rgba(232,88,42,.42);}
+  .btn-big:active{transform:scale(.97);}
+
+  /* ---------- QUESTIONS ---------- */
+  .progress{font-weight:800;color:var(--ink-soft);letter-spacing:3px;font-size:.95rem;margin-bottom:6px;}
+  .progress-bar{
+    width:260px;height:8px;background:#f0dcc6;border-radius:99px;
+    margin:10px auto 28px;overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;width:0%;border-radius:99px;
+    background:linear-gradient(90deg,var(--accent),#ffb25e);
+    transition:width .4s cubic-bezier(.34,1.4,.64,1);
+  }
+  .question-text{
+    font-size:clamp(1.5rem,4.6vw,2.1rem);font-weight:800;line-height:1.25;
+    margin-bottom:26px;min-height:2.6em;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .answers{display:grid;gap:14px;grid-template-columns:1fr 1fr;}
+  @media(max-width:520px){.answers{grid-template-columns:1fr;}}
+  .answer{
+    background:var(--card);border:2px solid #f3e2ce;border-radius:var(--radius);
+    padding:20px 16px;cursor:pointer;font-size:1rem;font-weight:600;line-height:1.35;
+    color:var(--ink);box-shadow:var(--shadow);
+    transition:transform .16s ease,border-color .16s ease,background .16s ease;
+    animation:popIn .35s ease both;
+  }
+  .answer:nth-child(2){animation-delay:.06s;}
+  .answer:nth-child(3){animation-delay:.12s;}
+  .answer:nth-child(4){animation-delay:.18s;}
+  @keyframes popIn{
+    from{opacity:0;transform:scale(.9) translateY(10px);}
+    to{opacity:1;transform:scale(1) translateY(0);}
+  }
+  .answer .emo{font-size:1.7rem;display:block;margin-bottom:8px;}
+  .answer:hover{transform:translateY(-4px) scale(1.02);border-color:var(--accent);}
+  .answer.picked{
+    background:linear-gradient(135deg,#ffe8d6,#ffdcc2);
+    border-color:var(--accent);transform:scale(1.05);
+    animation:yay .35s cubic-bezier(.34,1.6,.64,1);
+  }
+  @keyframes yay{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.12) rotate(2deg);}
+    100%{transform:scale(1.05);}
+  }
+  .ack{margin-top:20px;min-height:1.5em;font-weight:700;color:var(--accent-deep);opacity:0;transition:opacity .2s;}
+  .ack.show{opacity:1;}
+
+  /* ---------- MINI-GAME COMMON ---------- */
+  .mg-title{font-size:clamp(1.5rem,4.6vw,2.1rem);font-weight:900;margin-bottom:6px;}
+  .mg-sub{color:var(--ink-soft);font-weight:600;margin-bottom:22px;}
+  .mg-emoji-hero{font-size:3.2rem;margin-bottom:14px;display:inline-block;}
+
+  /* A: don't think */
+  .dt-timer{
+    height:10px;width:280px;margin:0 auto 24px;background:#f0dcc6;border-radius:99px;overflow:hidden;
+  }
+  .dt-timer-fill{height:100%;width:100%;background:linear-gradient(90deg,#ff5252,var(--accent));border-radius:99px;transition:width .1s linear;}
+  .dt-cards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+  .dt-card{
+    width:150px;padding:26px 10px;background:var(--card);border:2px solid #f3e2ce;
+    border-radius:20px;cursor:pointer;box-shadow:var(--shadow);
+    transition:transform .15s ease,border-color .15s ease;
+    animation:popIn .3s ease both;
+  }
+  .dt-card .emo{font-size:3rem;display:block;margin-bottom:8px;}
+  .dt-card .lbl{font-weight:700;font-size:.95rem;}
+  .dt-card:hover{transform:translateY(-6px) scale(1.04);border-color:var(--accent);}
+  .dt-card.chosen{border-color:var(--accent);background:linear-gradient(135deg,#ffe8d6,#ffdcc2);animation:yay .35s both;}
+  .dt-card.faded{opacity:.35;filter:grayscale(.6);}
+
+  /* B & E: meters */
+  .meter-wrap{width:min(420px,90%);margin:14px auto 8px;}
+  .meter{
+    position:relative;height:22px;border-radius:99px;
+    background:linear-gradient(90deg,#c8e6c9,#ffe08a,#ff9e57,#e84b2f);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.12);
+  }
+  .meter-cursor{
+    position:absolute;top:50%;left:0;width:16px;height:44px;border-radius:8px;
+    background:#fff;border:3px solid var(--accent-deep);
+    transform:translate(-50%,-50%);
+    box-shadow:0 4px 10px rgba(0,0,0,.2);
+  }
+  .meter-cursor.moving{transition:none;}
+  .meter-labels{display:flex;justify-content:space-between;font-size:.78rem;font-weight:800;color:var(--ink-soft);margin-top:10px;letter-spacing:.5px;}
+  .meter-stop{
+    margin-top:28px;font-size:1.15rem;font-weight:800;color:#fff;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent-deep));
+    padding:15px 44px;border-radius:999px;box-shadow:0 10px 22px rgba(232,88,42,.3);
+    transition:transform .15s ease;
+  }
+  .meter-stop:hover{transform:translateY(-3px) scale(1.04);}
+
+  /* C: wallet */
+  .wallet-hero{font-size:3.4rem;margin-bottom:10px;display:inline-block;animation:bob 2.6s ease-in-out infinite;}
+  .slider-wrap{width:min(440px,92%);margin:26px auto 8px;}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:16px;border-radius:99px;
+    background:linear-gradient(90deg,#bcaaa4,#8bc48a,#ffcf5e,#ff7a45);outline:none;cursor:grab;
+  }
+  input[type=range]:active{cursor:grabbing;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:38px;height:38px;border-radius:50%;
+    background:#fff;border:4px solid var(--accent-deep);
+    box-shadow:0 4px 10px rgba(0,0,0,.25);cursor:grab;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:32px;height:32px;border-radius:50%;background:#fff;border:4px solid var(--accent-deep);
+    box-shadow:0 4px 10px rgba(0,0,0,.25);cursor:grab;
+  }
+  .wallet-label{font-size:1.5rem;font-weight:900;margin-top:18px;color:var(--accent-deep);min-height:1.4em;}
+
+  /* D: catch */
+  .catch-arena{
+    position:relative;width:min(480px,94%);height:320px;margin:0 auto;
+    background:linear-gradient(180deg,#fff2df,#ffe6c7);
+    border:3px solid #f0d4b2;border-radius:22px;overflow:hidden;
+    box-shadow:var(--shadow);
+    cursor:none;touch-action:none;
+  }
+  .falling{position:absolute;font-size:1.9rem;user-select:none;pointer-events:none;will-change:transform;}
+  .plate{
+    position:absolute;bottom:10px;font-size:2.6rem;left:50%;
+    transform:translateX(-50%);user-select:none;pointer-events:none;
+    filter:drop-shadow(0 6px 8px rgba(120,72,30,.25));
+  }
+  .catch-hud{
+    display:flex;justify-content:space-between;width:min(480px,94%);margin:12px auto 0;
+    font-weight:800;color:var(--ink-soft);
+  }
+  .catch-count{font-size:1.2rem;color:var(--accent-deep);}
+  .pop-score{
+    position:absolute;font-weight:900;color:var(--accent-deep);pointer-events:none;
+    animation:popScore .5s ease-out forwards;font-size:1rem;
+  }
+  @keyframes popScore{
+    from{transform:translateY(0);opacity:1;}
+    to{transform:translateY(-34px);opacity:0;}
+  }
+
+  /* E: lime */
+  .lime-btn{
+    font-size:5rem;background:none;border:none;cursor:pointer;line-height:1;
+    transition:transform .08s ease;user-select:none;
+    filter:drop-shadow(0 8px 12px rgba(120,72,30,.25));
+  }
+  .lime-btn:active{transform:scale(.85) rotate(-10deg);}
+  .lime-juice{
+    position:absolute;font-size:1rem;pointer-events:none;
+    animation:popScore .55s ease-out forwards;
+  }
+  .lime-stage{position:relative;display:inline-block;min-width:280px;padding:10px 0;}
+  .lime-meter-wrap{width:min(380px,86%);margin:22px auto 8px;}
+
+  /* ---------- ANALYSIS ---------- */
+  .analysis-emoji{font-size:4rem;display:inline-block;animation:thinkbob 1s ease-in-out infinite;}
+  @keyframes thinkbob{
+    0%,100%{transform:rotate(-10deg) scale(1);}
+    50%{transform:rotate(10deg) scale(1.1);}
+  }
+  .analysis-title{font-size:2.2rem;font-weight:900;margin-top:14px;}
+  .analysis-lines{margin-top:26px;display:flex;flex-direction:column;gap:12px;align-items:center;}
+  .analysis-line{
+    font-size:1.1rem;font-weight:700;color:var(--ink);
+    background:var(--card);border:2px solid #f3e2ce;border-radius:16px;
+    padding:12px 26px;box-shadow:var(--shadow);
+    opacity:0;transform:translateY(10px);
+    transition:opacity .35s ease,transform .35s ease;
+    min-width:min(400px,86%);
+  }
+  .analysis-line.show{opacity:1;transform:translateY(0);}
+  .analysis-line .tick{color:#3fae5a;margin-right:8px;}
+  .analysis-final{
+    margin-top:30px;font-size:1.5rem;font-weight:900;color:var(--accent-deep);
+    opacity:0;transition:opacity .4s ease;
+  }
+  .analysis-final.show{opacity:1;}
+
+  /* ---------- RESULT ---------- */
+  .result-eyebrow{font-size:1.2rem;font-weight:800;letter-spacing:4px;color:var(--ink-soft);}
+  .result-verdict-word{
+    font-size:clamp(2.4rem,8vw,3.6rem);font-weight:900;letter-spacing:2px;
+    background:linear-gradient(135deg,var(--accent),#ffb25e 60%,var(--accent-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    margin-top:4px;
+  }
+  .food-card{
+    margin:26px auto 8px;padding:44px 30px 36px;max-width:460px;
+    background:var(--card);border-radius:32px;box-shadow:var(--shadow);
+    border:2px solid #f6e5d0;position:relative;overflow:hidden;
+  }
+  .food-card::before{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 20%, #fff3e2 0%, transparent 60%);
+  }
+  .food-emoji{
+    font-size:clamp(5.5rem,18vw,8rem);line-height:1;position:relative;
+    display:inline-block;filter:drop-shadow(0 14px 20px rgba(120,72,30,.25));
+    animation:reveal .7s cubic-bezier(.22,1.6,.36,1) both;
+  }
+  @keyframes reveal{
+    0%{transform:scale(0) rotate(-30deg);opacity:0;}
+    70%{transform:scale(1.15) rotate(6deg);}
+    100%{transform:scale(1) rotate(0);opacity:1;}
+  }
+  .food-name{
+    font-size:clamp(2.2rem,7vw,3.2rem);font-weight:900;margin-top:12px;
+    color:var(--accent-deep);position:relative;
+    animation:fadeUp .5s .25s ease both;
+  }
+  .sparkle{position:absolute;font-size:1.4rem;animation:sparkle 1.6s ease-out infinite;}
+  @keyframes sparkle{
+    0%{transform:scale(0);opacity:0;}
+    50%{transform:scale(1.2);opacity:1;}
+    100%{transform:scale(0);opacity:0;}
+  }
+  .verdict{
+    margin:22px auto 0;max-width:500px;font-size:1.15rem;font-weight:600;line-height:1.55;
+    animation:fadeUp .5s .4s ease both;
+  }
+  .decision{margin-top:26px;font-size:1.4rem;font-weight:900;letter-spacing:1px;animation:fadeUp .5s .55s ease both;}
+  .btn-done{
+    margin-top:20px;font-size:1.1rem;font-weight:800;color:#fff;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent-deep));
+    padding:16px 46px;border-radius:999px;
+    box-shadow:0 12px 24px rgba(232,88,42,.3);
+    transition:transform .15s ease;animation:fadeUp .5s .7s ease both;
+  }
+  .btn-done:hover{transform:translateY(-3px) scale(1.04);}
+
+  /* "Anyway…" transition line on result screen */
+  .anyway{
+    margin-top:18px;font-size:1.1rem;font-weight:700;color:var(--ink-soft);
+    opacity:0;transition:opacity .5s ease;
+  }
+  .anyway.show{opacity:1;}
+
+  /* ---------- FAKE AD ---------- */
+  .ad-badge{
+    display:inline-block;font-size:.75rem;font-weight:900;letter-spacing:2px;
+    color:#fff;background:var(--accent-deep);border-radius:99px;
+    padding:7px 18px;margin-bottom:16px;
+    animation:pulseBadge 1.6s ease-in-out infinite;
+  }
+  @keyframes pulseBadge{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(1.06);}
+  }
+  .ad-card{
+    max-width:470px;margin:0 auto;padding:36px 30px 30px;
+    background:var(--card);border-radius:28px;box-shadow:var(--shadow);
+    border:2px solid #f6e5d0;position:relative;overflow:hidden;
+    animation:popIn .45s ease both;
+  }
+  .ad-card::before{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 0%, #fff3e2 0%, transparent 55%);
+  }
+  .ad-emoji{
+    font-size:clamp(4.5rem,15vw,6.5rem);line-height:1;position:relative;
+    filter:drop-shadow(0 12px 18px rgba(120,72,30,.25));
+    animation:reveal .7s cubic-bezier(.22,1.6,.36,1) both;
+  }
+  .ad-restaurant{
+    font-size:clamp(1.7rem,5.5vw,2.3rem);font-weight:900;margin-top:14px;
+    color:var(--accent-deep);position:relative;letter-spacing:-.5px;
+  }
+  .ad-tagline{
+    margin-top:8px;font-size:1.05rem;font-weight:600;color:var(--ink);
+    line-height:1.5;position:relative;
+  }
+  .ad-meta{
+    display:flex;justify-content:center;gap:26px;margin-top:18px;position:relative;
+    font-weight:800;color:var(--ink);
+  }
+  .ad-meta .stars{color:#ffb020;font-size:1rem;display:block;}
+  .ad-meta .num{font-size:.95rem;color:var(--ink-soft);}
+  .ad-personal{
+    margin-top:18px;padding:14px 18px;border-radius:16px;position:relative;
+    background:linear-gradient(135deg,#fff0dd,#ffe6cc);
+    font-weight:700;font-size:.98rem;line-height:1.5;
+  }
+  .ad-personal::before{
+    content:"✦ ";color:var(--accent-deep);
+  }
+  .btn-ad{
+    margin-top:22px;font-size:1.15rem;font-weight:900;letter-spacing:1px;
+    color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-deep));
+    border:none;border-radius:999px;padding:18px 40px;cursor:pointer;position:relative;
+    box-shadow:0 12px 26px rgba(232,88,42,.35);
+    transition:transform .15s ease;animation:pulseBadge 1.4s ease-in-out infinite;
+  }
+  .btn-ad:hover{transform:translateY(-3px) scale(1.04);}
+  .ad-confirm{
+    margin-top:18px;font-size:1.15rem;font-weight:900;color:var(--accent-deep);
+    min-height:1.6em;position:relative;
+  }
+  .btn-again{
+    margin-top:14px;font-size:.95rem;font-weight:800;color:var(--ink-soft);
+    background:none;border:2px solid #ecd9c3;border-radius:999px;
+    padding:12px 30px;cursor:pointer;position:relative;
+    transition:border-color .15s ease,color .15s ease;
+  }
+  .btn-again:hover{border-color:var(--accent);color:var(--accent-deep);}
+  .ad-disclaimer{
+    margin-top:22px;font-size:.72rem;font-style:italic;color:#b39a86;
+  }
+
+  .dots::after{content:"";animation:dots 1.4s steps(4) infinite;}
+
+  /* sound toggle */
+  .sound-toggle{
+    position:fixed;top:16px;right:16px;z-index:50;
+    width:46px;height:46px;border-radius:50%;border:2px solid #f3d9bd;
+    background:rgba(255,255,255,.9);font-size:1.3rem;cursor:pointer;
+    box-shadow:0 6px 14px rgba(120,72,30,.15);
+    transition:transform .15s ease;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .sound-toggle:hover{transform:scale(1.1);}
+  .sound-toggle.muted{filter:grayscale(1);opacity:.6;}
+  @keyframes dots{
+    0%{content:"";}
+    25%{content:".";}
+    50%{content:"..";}
+    75%{content:"...";}
+  }
+</style>
+</head>
+<body>
+
+<button class="sound-toggle" id="sound-toggle" title="toggle sound">🔊</button>
+
+<div class="stage">
+
+  <!-- TITLE -->
+  <section class="screen active" id="screen-title">
+    <div class="logo">FEEDME</div>
+    <div class="tagline">You don't know what to eat. We do.</div>
+    <div class="subline">3 questions. A couple of… tests. We'll make the decision for you.</div>
+    <div class="hero-food">🍜</div>
+    <div><button class="btn-big" id="btn-start">FEED ME →</button></div>
+  </section>
+
+  <!-- QUESTIONS -->
+  <section class="screen" id="screen-quiz">
+    <div class="progress" id="progress-label">01 / 03</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="question-text" id="question-text"></div>
+    <div class="answers" id="answers"></div>
+    <div class="ack" id="ack"></div>
+  </section>
+
+  <!-- MINI-GAME CONTAINER -->
+  <section class="screen" id="screen-mg">
+    <div id="mg-mount"></div>
+    <div class="feedy-says" id="mg-says"></div>
+  </section>
+
+  <!-- ANALYSIS -->
+  <section class="screen" id="screen-analysis">
+    <div class="analysis-emoji">🕵️</div>
+    <div class="analysis-title">Okay.</div>
+    <div class="mg-sub" style="margin-top:8px;">I've reviewed the evidence.</div>
+    <div class="analysis-lines" id="analysis-lines"></div>
+    <div class="analysis-final" id="analysis-final">I know what you need.</div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen" id="screen-result">
+    <div class="result-eyebrow">THE VERDICT</div>
+    <div class="result-verdict-word">YOU SHOULD EAT...</div>
+    <div class="food-card" id="food-card">
+      <span class="food-emoji" id="food-emoji"></span>
+      <div class="food-name" id="food-name"></div>
+    </div>
+    <div class="verdict" id="verdict"></div>
+    <div class="decision">Decision made. Go eat.</div>
+    <button class="btn-done" id="btn-done">DONE ✓</button>
+    <div class="anyway" id="anyway">…anyway.</div>
+  </section>
+
+  <!-- FAKE AD -->
+  <section class="screen" id="screen-ad">
+    <div>
+      <div class="ad-badge" id="ad-badge">✨ PERSONALLY SELECTED FOR YOU ✨</div>
+      <div class="ad-card">
+        <span class="ad-emoji" id="ad-emoji"></span>
+        <div class="ad-restaurant" id="ad-restaurant"></div>
+        <div class="ad-tagline" id="ad-tagline"></div>
+        <div class="ad-meta">
+          <span><span class="stars" id="ad-stars"></span><span class="num" id="ad-rating"></span></span>
+          <span><span class="stars">⏱</span><span class="num" id="ad-time"></span></span>
+        </div>
+        <div class="ad-personal" id="ad-personal"></div>
+        <button class="btn-ad" id="btn-ad">ORDER NOW →</button>
+        <div class="ad-confirm" id="ad-confirm"></div>
+        <div><button class="btn-again" id="btn-again" style="display:none;">PLAY AGAIN</button></div>
+      </div>
+      <div class="ad-disclaimer" id="ad-disclaimer"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ================================================================
+   FOOD DATABASE (20 foods, attributes 0–5)
+================================================================ */
+const FOODS = [
+  {name:"PHỞ", emoji:"🍜", a:{comfort:5,filling:4,warmth:5,fresh:3,spicy:2,rich:3,effort:2,cost:3,energy:4,fun:3,adventure:3,social:4}},
+  {name:"RAMEN", emoji:"🍜", a:{comfort:5,filling:5,warmth:5,fresh:2,spicy:3,rich:5,effort:2,cost:3,energy:4,fun:4,adventure:3,social:3}},
+  {name:"PASTA", emoji:"🍝", a:{comfort:5,filling:4,warmth:4,fresh:2,spicy:1,rich:5,effort:2,cost:2,energy:3,fun:3,adventure:2,social:4}},
+  {name:"PIZZA", emoji:"🍕", a:{comfort:4,filling:5,warmth:4,fresh:2,spicy:1,rich:4,effort:1,cost:2,energy:3,fun:5,adventure:2,social:5}},
+  {name:"BURGER", emoji:"🍔", a:{comfort:4,filling:5,warmth:3,fresh:2,spicy:1,rich:5,effort:1,cost:2,energy:3,fun:4,adventure:2,social:3}},
+  {name:"SUSHI", emoji:"🍣", a:{comfort:2,filling:3,warmth:1,fresh:5,spicy:1,rich:2,effort:2,cost:4,energy:3,fun:4,adventure:4,social:4}},
+  {name:"TACOS", emoji:"🌮", a:{comfort:3,filling:4,warmth:3,fresh:4,spicy:4,rich:3,effort:2,cost:2,energy:4,fun:5,adventure:4,social:4}},
+  {name:"CURRY", emoji:"🍛", a:{comfort:5,filling:5,warmth:5,fresh:2,spicy:4,rich:4,effort:2,cost:2,energy:3,fun:3,adventure:4,social:3}},
+  {name:"GRAIN BOWL", emoji:"🥗", a:{comfort:2,filling:3,warmth:2,fresh:5,spicy:1,rich:2,effort:2,cost:2,energy:4,fun:2,adventure:2,social:2}},
+  {name:"SANDWICH", emoji:"🥪", a:{comfort:3,filling:3,warmth:1,fresh:4,spicy:1,rich:2,effort:1,cost:1,energy:3,fun:2,adventure:1,social:2}},
+  {name:"DUMPLINGS", emoji:"🥟", a:{comfort:5,filling:4,warmth:5,fresh:2,spicy:1,rich:3,effort:2,cost:2,energy:3,fun:4,adventure:3,social:4}},
+  {name:"RICE BOWL", emoji:"🍚", a:{comfort:4,filling:5,warmth:4,fresh:3,spicy:2,rich:3,effort:1,cost:1,energy:3,fun:2,adventure:2,social:2}},
+  {name:"FRIED CHICKEN", emoji:"🍗", a:{comfort:4,filling:5,warmth:3,fresh:1,spicy:2,rich:5,effort:1,cost:2,energy:4,fun:5,adventure:2,social:4}},
+  {name:"BURRITO", emoji:"🌯", a:{comfort:4,filling:5,warmth:3,fresh:3,spicy:3,rich:4,effort:1,cost:2,energy:4,fun:4,adventure:3,social:3}},
+  {name:"HOT POT", emoji:"🍲", a:{comfort:5,filling:5,warmth:5,fresh:4,spicy:4,rich:4,effort:4,cost:4,energy:4,fun:5,adventure:4,social:5}},
+  {name:"BIBIMBAP", emoji:"🥘", a:{comfort:4,filling:4,warmth:4,fresh:4,spicy:3,rich:3,effort:2,cost:2,energy:4,fun:3,adventure:4,social:3}},
+  {name:"BRUNCH PANCAKES", emoji:"🥞", a:{comfort:5,filling:4,warmth:4,fresh:2,spicy:0,rich:5,effort:3,cost:3,energy:2,fun:5,adventure:2,social:5}},
+  {name:"KEBAB", emoji:"🥙", a:{comfort:3,filling:5,warmth:4,fresh:3,spicy:3,rich:4,effort:1,cost:1,energy:4,fun:4,adventure:4,social:3}},
+  {name:"TOM YUM", emoji:"🍲", a:{comfort:4,filling:3,warmth:5,fresh:4,spicy:5,rich:3,effort:3,cost:3,energy:5,fun:4,adventure:5,social:4}},
+  {name:"DESSERT", emoji:"🍰", a:{comfort:5,filling:2,warmth:2,fresh:3,spicy:0,rich:5,effort:1,cost:2,energy:5,fun:5,adventure:2,social:4}},
+];
+
+/* ================================================================
+   QUESTION POOL
+================================================================ */
+const QUESTIONS = [
+  { q:"Okay first of all… how are we doing?", answers:[
+    {emo:"😌", text:"I need comfort.", ack:"Comfort it is.", w:{comfort:3,warmth:2,rich:1}, trait:"mood: in need of a hug"},
+    {emo:"⚡", text:"Alive. Barely. But functional.", ack:"Caffeine-adjacent, noted.", w:{energy:3}, trait:"energy: running on fumes"},
+    {emo:"🥳", text:"Today is actually kinda slay.", ack:"Okay, icon.", w:{fun:3,social:2,adventure:1}, trait:"mood: suspiciously good"},
+    {emo:"🧍", text:"I am simply existing.", ack:"Mood. Processing.", w:{comfort:2,effort:-2,energy:1}, trait:"mood: decorative"},
+  ]},
+  { q:"Be honest. How hungry are you?", answers:[
+    {emo:"🐭", text:"I could eat. Like… eventually.", ack:"Snack energy.", w:{filling:-1,fresh:2}, trait:"hunger: theoretical"},
+    {emo:"🙂", text:"Yeah, I'm hungry hungry.", ack:"Real hunger detected.", w:{filling:2}, trait:"hunger: legitimate"},
+    {emo:"🦖", text:"I haven't eaten since the dinosaurs.", ack:"Extinction-level hunger.", w:{filling:4}, trait:"hunger: prehistoric"},
+    {emo:"☠️", text:"If food doesn't arrive soon, it's over for everyone.", ack:"Emergency. Fast.", w:{filling:4,effort:-2,energy:1}, trait:"hunger: a threat to society"},
+  ]},
+  { q:"If your mouth could text you right now, what would it say?", answers:[
+    {emo:"🍜", text:"Give me something WARM.", ack:"Warming up.", w:{warmth:4}, trait:"mouth: requests heat"},
+    {emo:"🌶️", text:"Make it SPICY. I need problems.", ack:"Chaos requested.", w:{spicy:5}, trait:"spice tolerance: chaotic"},
+    {emo:"🥗", text:"Can we pretend we're healthy today?", ack:"Pretend-health. Sure.", w:{fresh:5}, trait:"health goals: fictional"},
+    {emo:"🍔", text:"I want something that will change my life.", ack:"Life-changing food. On it.", w:{rich:4,filling:3,fun:2}, trait:"standards: life-altering"},
+  ]},
+  { q:"How much effort are we putting into this meal?", answers:[
+    {emo:"🛌", text:"If delivery could crawl into bed, that'd be great.", ack:"Zero effort mode.", w:{effort:-4}, trait:"willingness to move: none"},
+    {emo:"🚶", text:"Fine. I'll leave the house.", ack:"Brave. Slightly.", w:{effort:-1,social:2}, trait:"willingness to move: negotiable"},
+    {emo:"🍳", text:"I can cook. I guess I'm an adult now.", ack:"Adulthood unlocked.", w:{effort:2,warmth:2}, trait:"adulthood: activated"},
+    {emo:"✨", text:"We're making an EVENT out of this.", ack:"An EVENT. Say less.", w:{effort:3,fun:3,social:4,adventure:2}, trait:"meal status: EVENT"},
+  ]},
+  { q:"What's today's financial situation?", answers:[
+    {emo:"💸", text:"Money is fake.", ack:"Delusional budget. Love it.", w:{cost:2,fun:2}, trait:"economics: conspiracy"},
+    {emo:"🙂", text:"We're being responsible.", ack:"Boring but valid.", w:{cost:-1,filling:2}, trait:"budgeting: competent"},
+    {emo:"🫠", text:"My bank account said 'girl be serious.'", ack:"Broke era confirmed.", w:{cost:-4}, trait:"finances: imaginary"},
+    {emo:"🤑", text:"Today, we ball.", ack:"BALLIN'.", w:{cost:4,fun:2,social:2}, trait:"finances: BALLIN'"},
+  ]},
+  { q:"How much chewing are we willing to do today?", answers:[
+    {emo:"🥣", text:"Minimal chewing, please.", ack:"Soft foods only.", w:{effort:-2,comfort:2,warmth:2}, trait:"chewing: overrated"},
+    {emo:"🙂", text:"Normal human amount.", ack:"Standard chewing.", w:{}, trait:"chewing: standard issue"},
+    {emo:"🦷", text:"I paid for these teeth. USE THEM.", ack:"Dental ROI.", w:{filling:3,rich:2}, trait:"teeth: fully utilized"},
+    {emo:"🫠", text:"Can someone just feed me?", ack:"Baby bird mode.", w:{effort:-3,comfort:3}, trait:"independence: declining"},
+  ]},
+  { q:"What's today's food vibe?", answers:[
+    {emo:"🫂", text:"I need a hug, but in food form.", ack:"Edible hug incoming.", w:{comfort:5,warmth:3}, trait:"vibe: edible hug"},
+    {emo:"⚡", text:"WAKE UP BABE.", ack:"Alarm clock food.", w:{energy:4,spicy:2}, trait:"vibe: emergency activation"},
+    {emo:"💅", text:"You deserve this.", ack:"Treat. Yas.", w:{rich:2,fun:3,cost:2}, trait:"vibe: main character"},
+    {emo:"🤡", text:"I don't know. You figure it out.", ack:"That's literally my job.", w:{adventure:3,fun:1}, trait:"opinions: unavailable"},
+  ]},
+  { q:"Are we trying something new today?", answers:[
+    {emo:"🛋️", text:"Absolutely not. I know what I like.", ack:"Comfort zone secured.", w:{adventure:-3,comfort:2}, trait:"adventure: declined"},
+    {emo:"🙂", text:"Maybe something a little different.", ack:"Mild adventure. Okay.", w:{adventure:2}, trait:"adventure: lightly seasoned"},
+    {emo:"🌎", text:"Give me something that makes me feel like I traveled.", ack:"Passport mode.", w:{adventure:5,spicy:2}, trait:"adventure: passport ready"},
+    {emo:"🎰", text:"Surprise me. I have no survival instincts.", ack:"Dangerous. Fun.", w:{adventure:4,fun:3,spicy:1}, trait:"survival instincts: none"},
+  ]},
+  { q:"How much time do we have before we become unnecessarily dramatic?", answers:[
+    {emo:"⏰", text:"5 minutes. MAX.", ack:"Speed run.", w:{effort:-4,filling:1}, trait:"patience: 5 minutes, MAX"},
+    {emo:"🚶", text:"Maybe 20–30 minutes.", ack:"Reasonable clock.", w:{effort:-1}, trait:"patience: reasonable"},
+    {emo:"🧘", text:"We've got time.", ack:"Time is a flat circle anyway.", w:{effort:2,warmth:2,social:1}, trait:"patience: infinite"},
+    {emo:"🕰️", text:"Today has no concept of time.", ack:"Timeless void eating.", w:{effort:1,comfort:2,social:1}, trait:"relationship with time: strained"},
+  ]},
+  { q:"Who's eating with you?", answers:[
+    {emo:"🧍", text:"Me, myself and I.", ack:"Party of one.", w:{social:-3,comfort:2}, trait:"dining party: just you"},
+    {emo:"👯", text:"Me + one other hungry person.", ack:"Dynamic duo.", w:{social:2}, trait:"dining party: duo"},
+    {emo:"👨‍👩‍👧", text:"The whole squad.", ack:"Squad feast loading.", w:{social:5,filling:2,fun:2}, trait:"dining party: THE SQUAD"},
+    {emo:"🤡", text:"I don't know. People keep appearing.", ack:"Uninvited hunger swarm.", w:{social:4,filling:2,effort:-1}, trait:"dining party: unpredictable"},
+  ]},
+  { q:"What does the outside world feel like today?", answers:[
+    {emo:"🥶", text:"I want to be wrapped in a blanket.", ack:"Blanket protocol.", w:{warmth:5,comfort:3}, trait:"weather: hostile"},
+    {emo:"☀️", text:"Sun's out. We move.", ack:"Solar powered.", w:{fresh:3,energy:2}, trait:"weather: cooperating"},
+    {emo:"🌧️", text:"Stay inside. Eat something warm.", ack:"Cozy storm mode.", w:{warmth:4,comfort:3,effort:-1}, trait:"weather: soup weather"},
+    {emo:"😐", text:"It's just… existing outside.", ack:"Same, outside. Same.", w:{comfort:1,energy:1}, trait:"weather: just kind of there"},
+  ]},
+  { q:"Pick whatever. This one's just vibes.", answers:[
+    {emo:"🍬", text:"Something sweet would fix me.", ack:"Emotional sugar loading.", w:{energy:3,fun:3,comfort:2}, trait:"emotional support: sugar-based"},
+    {emo:"🔥", text:"I want to sweat a little. Respectfully.", ack:"Glistening agenda.", w:{spicy:4,warmth:2}, trait:"sweat levels: respectful"},
+    {emo:"🌱", text:"My body is begging for vegetables.", ack:"Negotiating with your cells.", w:{fresh:5}, trait:"vegetable deficit: critical"},
+    {emo:"♾️", text:"I want SO much food. A concerning amount.", ack:"Concerning appetite logged.", w:{filling:5,rich:2}, trait:"appetite: alarming"},
+  ]},
+];
+
+/* generic short reactions FEEDME sprinkles around */
+const REACTIONS = [
+  "Hmm.","Interesting.","Noted.","Okay…","I'm learning.",
+  "That tells me a lot.","I see the vision.",
+  "This is getting concerning.","We're learning a lot about you.",
+  "Please be serious.","Fascinating.","Writing that down.","Mhm. Sure.",
+];
+
+/* ================================================================
+   GAME STATE
+================================================================ */
+const $ = id => document.getElementById(id);
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]);
+
+let steps = [];        // [{type:'q', q}, {type:'mg', id, weights, ack, ...}]
+let stepIndex = 0;
+let picks = [];        // {w:{attr:weight}, trait:"..."} — scoring inputs
+let traits = [];       // funny analysis lines
+let locked = false;
+let mgTimers = [];     // interval/timeout cleanup per mini-game
+
+function show(screen){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $(screen).classList.add("active");
+}
+
+/* ================================================================
+   AUDIO ENGINE — pure WebAudio, no files needed
+================================================================ */
+const Audio2 = (()=>{
+  let ctx=null, master=null, musicGain=null, sfxGain=null;
+  let muted=false, musicTimer=null, step=0;
+
+  function ensure(){
+    if(!ctx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return false;
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = muted?0:0.9; master.connect(ctx.destination);
+      musicGain = ctx.createGain(); musicGain.gain.value = 0.10; musicGain.connect(master);
+      sfxGain = ctx.createGain(); sfxGain.gain.value = 0.55; sfxGain.connect(master);
+    }
+    if(ctx.state === "suspended") ctx.resume();
+    return true;
+  }
+
+  /* one oscillator blip. slide = target freq to glide to (or 0) */
+  function blip(o){
+    if(!ensure()) return;
+    const {freq=440, dur=0.14, type="sine", vol=0.5, slide=0, delay=0, dest=sfxGain} = o;
+    const t = ctx.currentTime + delay;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if(slide) osc.frequency.exponentialRampToValueAtTime(Math.max(30, slide), t+dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t+dur);
+    osc.connect(g); g.connect(dest);
+    osc.start(t); osc.stop(t+dur+0.03);
+  }
+
+  /* short filtered noise burst — for ticks / hats */
+  function noise(o){
+    if(!ensure()) return;
+    const {dur=0.06, vol=0.2, delay=0, freq=4000} = o||{};
+    const t = ctx.currentTime + delay;
+    const len = Math.max(1, Math.floor(ctx.sampleRate*dur));
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*(1-i/len);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type="bandpass"; f.frequency.value=freq;
+    const g = ctx.createGain(); g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(sfxGain);
+    src.start(t);
+  }
+
+  /* -------- background music: cozy 8-bit bossa-ish loop -------- */
+  const BPM_STEP = 0.30; // seconds per 16th-ish
+  // melody in Hz (C major pentatonic-ish, playful)
+  const MELODY = [
+    523,   0, 659,   0, 784,   0, 659,   0,
+    587,   0, 784,   0, 880,   0, 784, 659,
+    523,   0, 659,   0, 784, 880,   0, 987,
+    880,   0, 784,   0, 659, 587, 523,   0,
+  ];
+  const BASS = [131, 0,0,0, 165, 0,0,0, 196, 0,0,0, 165, 0,0,0,
+                131, 0,0,0, 147, 0,0,0, 175, 0,0,0, 196, 0,0,0];
+
+  function musicTick(){
+    const m = MELODY[step % MELODY.length];
+    const b = BASS[step % BASS.length];
+    if(m) blip({freq:m, dur:0.22, type:"triangle", vol:0.5, dest:musicGain});
+    if(b) blip({freq:b, dur:0.5, type:"sine", vol:0.7, dest:musicGain});
+    if(step % 4 === 2) noise({dur:0.04, vol:0.05, freq:6000}); // soft shaker
+    step++;
+  }
+
+  function startMusic(){
+    if(!ensure() || musicTimer) return;
+    musicTimer = setInterval(musicTick, BPM_STEP*1000);
+  }
+  function stopMusic(){ if(musicTimer){ clearInterval(musicTimer); musicTimer=null; } }
+
+  function toggleMute(){
+    muted = !muted;
+    if(ctx) master.gain.linearRampToValueAtTime(muted?0:0.9, ctx.currentTime+0.1);
+    return muted;
+  }
+
+  /* -------- named SFX -------- */
+  const SFX = {
+    start(){ // happy rising arp
+      [523,659,784,1047].forEach((f,i)=>blip({freq:f, dur:.18, type:"triangle", vol:.5, delay:i*.09}));
+    },
+    click(){ blip({freq:600, slide:900, dur:.08, type:"triangle", vol:.4}); },
+    pick(n=0){ // answer picked — cheerier each question
+      const base = 523*Math.pow(1.12, n);
+      blip({freq:base, slide:base*1.5, dur:.16, type:"triangle", vol:.5});
+      blip({freq:base*1.5, dur:.1, type:"sine", vol:.3, delay:.07});
+    },
+    pop(){ blip({freq:900, slide:300, dur:.12, type:"sine", vol:.5}); },
+    swoosh(){ noise({dur:.25, vol:.25, freq:1200}); blip({freq:300, slide:900, dur:.22, type:"sine", vol:.25}); },
+    tick(){ noise({dur:.03, vol:.15, freq:3000}); },
+    ding(){ blip({freq:1200, dur:.12, type:"sine", vol:.45}); blip({freq:1800, dur:.1, type:"sine", vol:.25, delay:.05}); },
+    squeak(){ blip({freq:1400+Math.random()*300, slide:2200, dur:.07, type:"sawtooth", vol:.18}); },
+    stop(){ blip({freq:700, slide:200, dur:.2, type:"square", vol:.3}); },
+    buzz(){ blip({freq:110, dur:.35, type:"sawtooth", vol:.35}); },
+    timeout(){ blip({freq:400, slide:150, dur:.5, type:"triangle", vol:.4}); },
+    analysis(){ blip({freq:880, dur:.1, type:"sine", vol:.35}); },
+    fanfare(){ // final reveal
+      [523,659,784,1047,1319].forEach((f,i)=>blip({freq:f, dur:.35, type:"triangle", vol:.55, delay:i*.11}));
+      blip({freq:1568, dur:.6, type:"sine", vol:.4, delay:.6});
+    },
+    done(){ [784,523].forEach((f,i)=>blip({freq:f, dur:.18, type:"triangle", vol:.45, delay:i*.12})); },
+  };
+
+  return {SFX, startMusic, stopMusic, toggleMute, ensure};
+})();
+const SFX = Audio2.SFX;
+
+/* ================================================================
+   MINI-GAMES
+   each returns: {w:{attr:weight}, trait, ack} via done(result)
+================================================================ */
+const MINIGAMES = {
+
+  /* A — DON'T THINK, PICK ONE */
+  pickone(done, mount){
+    const pool = shuffle(FOODS).slice(0,3);
+    mount.innerHTML = `
+      <div class="mg-emoji-hero">👀</div>
+      <div class="mg-title">Quick. Don't think.</div>
+      <div class="mg-sub">Which one would you eat RIGHT NOW?</div>
+      <div class="dt-timer"><div class="dt-timer-fill" id="dt-fill"></div></div>
+      <div class="dt-cards" id="dt-cards"></div>`;
+    const cardsEl = $("dt-cards"), fill = $("dt-fill");
+    let timeLeft = 3.0, over = false;
+    const t = setInterval(()=>{
+      timeLeft -= 0.05;
+      fill.style.width = Math.max(0,(timeLeft/3)*100)+"%";
+      if(timeLeft <= 0 && !over) timeout();
+    }, 50);
+    mgTimers.push(t);
+
+    const cards = pool.map((f,i)=>{
+      const c = document.createElement("button");
+      c.className = "dt-card";
+      c.style.animationDelay = (i*0.06)+"s";
+      c.innerHTML = `<span class="emo">${f.emoji}</span><span class="lbl">${f.name}</span>`;
+      c.onclick = ()=>choose(i);
+      cardsEl.appendChild(c);
+      return c;
+    });
+
+    function choose(i){
+      if(over) return; over = true;
+      clearInterval(t);
+      SFX.pop();
+      cards.forEach((c,j)=>c.classList.add(j===i ? "chosen" : "faded"));
+      const f = pool[i];
+      // the clicked food's own profile contributes as hidden weights
+      // only the chosen food's 3 strongest traits leak into scoring —
+      // injecting the full profile would systematically favor foods
+      // that are strong at everything (hot pot always won)
+      const w = {};
+      Object.entries(f.a).sort((a,b)=>b[1]-a[1]).slice(0,3)
+        .forEach(([attr,v])=>w[attr] = v);
+      done({w, trait:`gut instinct: ${f.name.toLowerCase()}`});
+    }
+    function timeout(){
+      over = true; clearInterval(t);
+      SFX.timeout();
+      cards.forEach(c=>c.classList.add("faded"));
+      say("Time's up. I'll just assume you wanted noodles.");
+      setTimeout(()=>done({w:{comfort:2,warmth:2}, trait:"gut instinct: frozen by pressure"}), 1200);
+    }
+  },
+
+  /* B — SPICE TEST */
+  spice(done, mount){
+    mount.innerHTML = `
+      <div class="mg-emoji-hero">🌶️</div>
+      <div class="mg-title">The Spice Test.</div>
+      <div class="mg-sub">Stop the meter where your mouth can actually handle it.</div>
+      <div class="meter-wrap">
+        <div class="meter"><div class="meter-cursor" id="sp-cursor"></div></div>
+        <div class="meter-labels"><span>NOPE</span><span>A LITTLE</span><span>SPICY</span><span>MISTAKE</span></div>
+      </div>
+      <button class="meter-stop" id="sp-stop">STOP 🔪</button>`;
+    const cursor = $("sp-cursor");
+    let pos = 50, dir = 1, running = true;
+    const t = setInterval(()=>{
+      pos += dir * (2.2 + Math.abs(50-pos)*0.04); // livelier near edges
+      if(pos >= 96){pos = 96; dir = -1;}
+      if(pos <= 4){pos = 4; dir = 1;}
+      cursor.style.left = pos+"%";
+    }, 30);
+    mgTimers.push(t);
+    $("sp-stop").onclick = stopMeter;
+    function stopMeter(){
+      if(!running) return; running = false;
+      clearInterval(t);
+      SFX.stop();
+      const v = pos/100; // 0..1
+      if(v >= .7) setTimeout(()=>SFX.buzz(), 150);
+      const w = {spicy: Math.round(v*10)};
+      let trait, ack;
+      if(v < .2){ trait="spice tolerance: decorative"; ack="Noted. Your mouth has zero ambitions."; }
+      else if(v < .45){ trait="spice tolerance: gentle"; ack="Cute. A little kick. Okay."; }
+      else if(v < .7){ trait="spice tolerance: respectable"; ack="Okay. You like a little chaos."; }
+      else if(v < .9){ trait="spice tolerance: alarming"; ack="Okay. You like problems."; }
+      else { trait="spice tolerance: a cry for help"; ack="You fear nothing. This is a cry for help."; w.adventure = 2; w.fun = 1; }
+      done({w, trait, ack});
+    }
+  },
+
+  /* C — WALLET CHECK */
+  wallet(done, mount){
+    mount.innerHTML = `
+      <div class="wallet-hero">👛</div>
+      <div class="mg-title">Wallet check.</div>
+      <div class="mg-sub">How are we financially? Drag to wherever feels accurate.</div>
+      <div class="slider-wrap">
+        <input type="range" id="wallet-slider" min="0" max="100" value="35">
+        <div class="meter-labels"><span>BROKE</span><span>RESPONSIBLE</span><span>QUESTIONABLE</span><span>WE BALL</span></div>
+      </div>
+      <div class="wallet-label" id="wallet-label">…</div>`;
+    const slider = $("wallet-slider"), label = $("wallet-label");
+    const zones = [
+      [0," 💸 BROKE 💸"],[25,"🙂 responsible"],[50,"🫠 questionable"],
+      [75,"🤑 WE BALL 🤑"],[100,"🎰 BALL BEYOND REASON"]
+    ];
+    let lastSeen = 35, firstTouch = true;
+    slider.addEventListener("input", ()=>{
+      SFX.tick();
+      if(firstTouch){ firstTouch = false; label.textContent = "mhm."; }
+      lastSeen = +slider.value;
+      const z = zones.reduce((a,b)=> Math.abs(b[0]-lastSeen) < Math.abs(a[0]-lastSeen) ? b : a);
+      label.textContent = z[1];
+    });
+    slider.addEventListener("change", ()=>{
+      SFX.ding();
+      const v = lastSeen/100;
+      // low slider = broke (want low cost), high = balling
+      const w = {cost: Math.round(v*8), rich: Math.round(v*3), effort: Math.round(v*2)};
+      const trait = v<.25 ? "financial situation: tragic"
+        : v<.5 ? "financial situation: stable, sadly"
+        : v<.75 ? "financial situation: questionable" : "financial situation: BALLIN'";
+      say("Financial analysis complete.");
+      setTimeout(()=>done({w, trait}), 900);
+    });
+  },
+
+  /* D — CATCH YOUR FOOD */
+  catch(done, mount){
+    mount.innerHTML = `
+      <div class="mg-emoji-hero">🍲</div>
+      <div class="mg-title">Prove it. Catch your food.</div>
+      <div class="mg-sub">Move the plate. Catch everything. 9 seconds. Go.</div>
+      <div class="catch-arena" id="ca">
+        <div class="plate" id="plate">🍲</div>
+      </div>
+      <div class="catch-hud">
+        <span>FOOD CAUGHT: <span class="catch-count" id="cc">0</span></span>
+        <span id="ct">9.0s</span>
+      </div>`;
+    const arena = $("ca"), plate = $("plate"), cc = $("cc"), ct = $("ct");
+    const DURATION = 9;
+    let caught = 0, plateX = arena.clientWidth/2, t0 = performance.now(), running = true;
+    const EMO = ["🍜","🍕","🥟","🌮","🍣","🍰","🍔","🍛","🍪","🥗"];
+
+    arena.addEventListener("mousemove", e=>{
+      const r = arena.getBoundingClientRect();
+      plateX = Math.max(30, Math.min(r.width-30, e.clientX - r.left));
+      plate.style.left = plateX+"px";
+    });
+    arena.addEventListener("touchmove", e=>{
+      const r = arena.getBoundingClientRect();
+      plateX = Math.max(30, Math.min(r.width-30, e.touches[0].clientX - r.left));
+      plate.style.left = plateX+"px";
+      e.preventDefault();
+    }, {passive:false});
+    const key = e=>{
+      if(e.key==="ArrowLeft") plateX = Math.max(30, plateX-38);
+      if(e.key==="ArrowRight") plateX = Math.min(arena.clientWidth-30, plateX+38);
+      plate.style.left = plateX+"px";
+    };
+    window.addEventListener("keydown", key);
+    mgTimers.push({clear:()=>window.removeEventListener("keydown", key)});
+
+    const items = [];
+    function spawn(){
+      if(!running) return;
+      const el = document.createElement("div");
+      el.className = "falling";
+      el.textContent = pick(EMO);
+      const x = 25 + Math.random()*(arena.clientWidth-50);
+      el.style.left = x+"px"; el.style.top = "-34px";
+      arena.appendChild(el);
+      items.push({el, x, y:-30, v: 2.2 + Math.random()*2.2});
+    }
+    const spawner = setInterval(spawn, 550); mgTimers.push(spawner);
+
+    const loop = setInterval(()=>{
+      const elapsed = (performance.now()-t0)/1000;
+      ct.textContent = Math.max(0, DURATION-elapsed).toFixed(1)+"s";
+      for(const it of items){
+        it.y += it.v;
+        it.el.style.transform = `translateY(${it.y}px)`;
+        if(it.y > arena.clientHeight-70 && !it.hit && Math.abs(it.x - plateX) < 42){
+          it.hit = true; caught++;
+          SFX.ding();
+          cc.textContent = caught;
+          it.el.remove();
+          const p = document.createElement("div");
+          p.className = "pop-score"; p.textContent = "+1";
+          p.style.left = plateX+"px"; p.style.top = (arena.clientHeight-70)+"px";
+          arena.appendChild(p);
+          setTimeout(()=>p.remove(), 500);
+        }
+        if(it.y > arena.clientHeight && !it.hit){ it.hit = true; it.el.remove(); }
+      }
+      if(elapsed >= DURATION) finish();
+    }, 16);
+    mgTimers.push(loop);
+
+    function finish(){
+      if(!running) return; running = false;
+      mgTimers.forEach(t=>t.clear ? t.clear() : clearInterval(t)); mgTimers = [];
+      const v = Math.min(1, caught/10);
+      const w = {filling: Math.round(v*8), energy: Math.round(v*3)};
+      let trait, ack;
+      if(caught <= 2){ trait="hunger (field test): mild"; ack="Two? TWO? Okay, light snack it is."; }
+      else if(caught <= 5){ trait="hunger (field test): normal"; ack="A respectable catch. You're hungry."; }
+      else if(caught <= 8){ trait="hunger (field test): serious"; ack="Okay… yeah. You're HUNGRY."; }
+      else { trait="hunger (field test): alarming"; ack="That was… concerning. I'm a little scared."; w.filling += 2; }
+      done({w, trait, ack});
+    }
+  },
+
+  /* E — LIME CHAOS */
+  lime(done, mount){
+    mount.innerHTML = `
+      <div class="mg-emoji-hero">🍋</div>
+      <div class="mg-title">Lime situation.</div>
+      <div class="mg-sub">Squeeze the lime. You have 6 seconds. Choose your destiny.</div>
+      <div class="lime-stage" id="lime-stage">
+        <button class="lime-btn" id="lime-btn">🍋</button>
+      </div>
+      <div class="meter-wrap lime-meter-wrap">
+        <div class="meter" style="background:linear-gradient(90deg,#e8f5d0,#c9e88a,#8bc48a,#2e7d32);">
+          <div class="meter-cursor" id="lime-cursor" style="left:4%;border-color:#5a9e2f;"></div>
+        </div>
+        <div class="meter-labels"><span>NO LIME</span><span>A LITTLE</span><span>PERFECT</span><span>LIME CRIME</span></div>
+      </div>`;
+    const btn = $("lime-btn"), cursor = $("lime-cursor"), stage = $("lime-stage");
+    let squeezes = 0, running = true;
+    const MAX = 12;
+    const sizes = ["🍋","🍋","🟡","🟡","🟢"];
+    btn.onclick = ()=>{
+      if(!running) return;
+      squeezes++;
+      SFX.squeak();
+      // juice particle
+      const j = document.createElement("span");
+      j.className = "lime-juice";
+      j.textContent = "💦";
+      j.style.left = (30+Math.random()*40)+"%";
+      j.style.top = "70%";
+      stage.appendChild(j);
+      setTimeout(()=>j.remove(), 550);
+      const frac = Math.min(1, squeezes/MAX);
+      cursor.style.left = (4 + frac*92)+"%";
+      if(squeezes < sizes.length*2) btn.style.fontSize = (5 - squeezes*0.18)+"rem";
+      if(squeezes >= MAX){ btn.textContent = "🤏"; finish(); }
+    };
+    const t = setTimeout(finish, 6000); mgTimers.push({clear:()=>clearTimeout(t)});
+    function finish(){
+      if(!running) return; running = false;
+      clearTimeout(t);
+      const frac = Math.min(1, squeezes/MAX);
+      const w = {fresh: Math.round(frac*7)};
+      let trait, ack;
+      if(frac < .15){ trait="lime policy: none"; ack="Respectfully… why?"; }
+      else if(frac < .45){ trait="lime policy: balanced"; ack="Okay. Balanced. Mature, even."; }
+      else if(frac < .8){ trait="lime policy: bold"; ack="You fear nothing."; w.adventure = 2; }
+      else { trait="lime status: CRIME"; ack="🚨 LIME CRIME DETECTED. Noted forever."; w.adventure = 3; w.fun = 2; SFX.buzz(); }
+      done({w, trait, ack});
+    }
+  },
+};
+
+/* ================================================================
+   FLOW
+================================================================ */
+function startGame(){
+  const qs = shuffle(QUESTIONS).slice(0,3);
+  const mgs = shuffle(Object.keys(MINIGAMES)).slice(0,2);
+  steps = [
+    {type:"q", q:qs[0]},
+    {type:"mg", id:mgs[0]},
+    {type:"q", q:qs[1]},
+    {type:"mg", id:mgs[1]},
+    {type:"q", q:qs[2]},
+    {type:"analyze"},
+  ];
+  stepIndex = 0; picks = []; traits = []; locked = false;
+  clearAdTimers();
+  nextStep();
+}
+
+function nextStep(){
+  const step = steps[stepIndex];
+  if(!step){ return; }
+  if(step.type === "q") { show("screen-quiz"); renderQuestion(step.q); }
+  else if(step.type === "mg") { show("screen-mg"); runMinigame(step.id); }
+  else if(step.type === "analyze") { runAnalysis(); }
+}
+
+/* ---------- questions ---------- */
+function renderQuestion(q){
+  locked = false;
+  $("progress-label").textContent = `0${Math.ceil((stepIndex+1)/2)} / 03`;
+  $("progress-fill").style.width = `${(stepIndex/5)*100}%`;
+  $("ack").classList.remove("show");
+
+  const qEl = $("question-text"), aEl = $("answers");
+  aEl.innerHTML = "";
+  qEl.style.animation = "none"; void qEl.offsetWidth;
+  qEl.style.animation = "fadeUp .35s ease both";
+  qEl.textContent = q.q;
+
+  q.answers.forEach(ans=>{
+    const b = document.createElement("button");
+    b.className = "answer";
+    b.innerHTML = `<span class="emo">${ans.emo}</span>${ans.text}`;
+    b.onclick = ()=>answer(b, ans);
+    aEl.appendChild(b);
+  });
+}
+
+function answer(btn, ans){
+  if(locked) return;
+  locked = true;
+  btn.classList.add("picked");
+  SFX.pick(Math.ceil((stepIndex+1)/2));
+  picks.push({w:ans.w, trait:ans.trait});
+  if(ans.trait) traits.push(ans.trait);
+  const ack = $("ack");
+  ack.textContent = ans.ack || pick(REACTIONS);
+  ack.classList.add("show");
+  $("progress-fill").style.width = `${((stepIndex+1)/5)*100}%`;
+  setTimeout(()=>{ stepIndex++; nextStep(); }, 750);
+}
+
+/* ---------- mini-games ---------- */
+function say(text){
+  const s = $("mg-says");
+  s.textContent = text;
+  s.classList.add("show");
+}
+
+function runMinigame(id){
+  const mount = $("mg-mount");
+  const says = $("mg-says");
+  says.classList.remove("show");
+  mount.innerHTML = "";
+  mgTimers.forEach(t=>t.clear ? t.clear() : clearInterval(t)); mgTimers = [];
+  SFX.swoosh();
+  // tiny "Prove it." style intro line
+  const intros = ["Hmm. Let's verify something.","Prove it.","One more test.","I need more data.","Don't click anything weird."];
+  mount.insertAdjacentHTML("beforeend","");
+  MINIGAMES[id](result => {
+    picks.push({w:result.w, trait:result.trait});
+    if(result.trait) traits.push(result.trait);
+    say(result.ack || pick(REACTIONS));
+    setTimeout(()=>{ stepIndex++; nextStep(); }, 1400);
+  }, mount);
+}
+
+/* ---------- analysis ---------- */
+function runAnalysis(){
+  show("screen-analysis");
+  const linesEl = $("analysis-lines");
+  linesEl.innerHTML = "";
+  $("analysis-final").classList.remove("show");
+
+  // 4 traits + one random absurd extra line
+  const chosen = shuffle(traits).slice(0,4);
+  chosen.push(pick(["life choices: ✓ interesting","emotional stability: ✓ probably fine","vibes: ✓ noted","decision-making ability: ✓ absent (that's why I'm here)","kitchen skills: ✓ alleged"]));
+  chosen.forEach(trait=>{
+    const div = document.createElement("div");
+    div.className = "analysis-line";
+    div.innerHTML = `<span class="tick">✓</span>${trait}`;
+    linesEl.appendChild(div);
+  });
+  const lines = [...linesEl.children];
+  lines.forEach((l,i)=>setTimeout(()=>{l.classList.add("show"); SFX.analysis();}, 500 + i*600));
+  setTimeout(()=>{$("analysis-final").classList.add("show"); SFX.ding();}, 500 + lines.length*600 + 400);
+  setTimeout(()=>showResult(), 500 + lines.length*600 + 2200);
+}
+
+/* ---------- verdict generation ---------- */
+function makeVerdict(food, inputs){
+  const bits = [];
+  for(const p of inputs){
+    const top = Object.entries(p.w).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1])[0];
+    if(!top) continue;
+    const map = {
+      comfort:"you needed comfort", warmth:"you wanted something warm", fresh:"you were pretending to be healthy",
+      spicy:"you demanded spice (and problems)", rich:"you wanted something rich", filling:"you were seriously hungry",
+      energy:"you needed to WAKE UP", fun:"you wanted fun", adventure:"you were feeling unhinged, adventures-wise",
+      social:"this was a group situation", effort:"you were ready to put in actual effort", cost:"money was emotionally available",
+    };
+    if(map[top[0]]) bits.push(map[top[0]]);
+  }
+  const tail = pick([
+    `Honestly? ${food.name} was inevitable.`,
+    `Also, you clearly have problems you're trying to solve with ${food.emoji}.`,
+    `Don't fight it. ${food.name} saw everything you did.`,
+    `The evidence was overwhelming. ${food.name} didn't even have to campaign.`,
+    `Stop thinking. ${food.name} decides.`,
+  ]);
+  const uniq = [...new Set(bits)];
+  if(uniq.length >= 2) return `You needed ${uniq.slice(0,2).join(" and ")}. ${tail}`;
+  if(uniq.length === 1) return `So basically, ${uniq[0]}. ${tail}`;
+  return `Your entire performance pointed at one thing. ${tail}`;
+}
+
+/* ---------- result ---------- */
+/* ================================================================
+   SCORING CALIBRATION
+   Some foods (looking at you, Hot Pot) are above-average in nearly
+   every attribute, so ANY mix of positive weights favors them.
+   We Monte-Carlo a few hundred random sessions at load time to get
+   each food's expected baseline score, then subtract it — so only
+   *above-expected* fit with this player's answers decides the winner.
+================================================================ */
+const CALIB = (()=>{
+  function randPickone(){
+    const pool = shuffle(FOODS).slice(0,3);
+    const w = {};
+    Object.entries(pool[Math.floor(Math.random()*3)].a)
+      .sort((a,b)=>b[1]-a[1]).slice(0,3).forEach(([k,v])=>w[k]=v);
+    return w;
+  }
+  const randMg = [
+    ()=>{ const v=Math.random(); return {spicy:Math.round(v*10)}; },
+    ()=>{ const v=Math.random(); return {cost:Math.round(v*8), rich:Math.round(v*3), effort:Math.round(v*2)}; },
+    ()=>{ const v=Math.random(); return {filling:Math.round(v*8), energy:Math.round(v*3)}; },
+    ()=>({fresh:Math.round(Math.random()*7)}),
+    randPickone,
+  ];
+  function randSessionWeights(){
+    const ws = shuffle(QUESTIONS).slice(0,3)
+      .map(q=>q.answers[Math.floor(Math.random()*q.answers.length)].w);
+    return ws.concat(shuffle(randMg).slice(0,2).map(f=>f()));
+  }
+  function rawScore(weights, food){
+    let s = 0;
+    for(const w of weights) for(const [attr,v] of Object.entries(w)) s += v*(food.a[attr]??0)*2;
+    return s;
+  }
+  const N = 300;
+  const acc = new Map(FOODS.map(f=>[f.name,0]));
+  for(let i=0;i<N;i++){
+    const weights = randSessionWeights();
+    for(const f of FOODS) acc.set(f.name, acc.get(f.name)+rawScore(weights,f));
+  }
+  const mean = {};
+  for(const f of FOODS) mean[f.name] = acc.get(f.name)/N;
+  return {rawScore, mean};
+})();
+
+function showResult(){
+  let best = null, bestScore = -Infinity;
+  const weightMaps = picks.map(p=>p.w);
+  for(const f of FOODS){
+    const raw = CALIB.rawScore(weightMaps, f);
+    const score = (raw - CALIB.mean[f.name]) + Math.random()*14; // handicap + noise for variety
+    if(score > bestScore){ bestScore = score; best = f; }
+  }
+  $("food-emoji").textContent = best.emoji;
+  $("food-name").textContent = best.name;
+  $("verdict").textContent = makeVerdict(best, picks);
+  SFX.fanfare();
+
+  const card = $("food-card");
+  card.querySelectorAll(".sparkle").forEach(e=>e.remove());
+  for(let i=0;i<5;i++){
+    const sp = document.createElement("span");
+    sp.className = "sparkle";
+    sp.textContent = ["✨","💫","⭐"][i%3];
+    sp.style.left = (10+Math.random()*80)+"%";
+    sp.style.top = (5+Math.random()*85)+"%";
+    sp.style.animationDelay = (i*0.25)+"s";
+    card.appendChild(sp);
+  }
+  for(const id of ["food-emoji","food-name"]){
+    const el = $(id);
+    el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
+  }
+  show("screen-result");
+  // epilogue: "…anyway." then the fake ad
+  $("anyway").classList.remove("show");
+  clearAdTimers();
+  adTimers.push(setTimeout(()=>$("anyway").classList.add("show"), 5000));
+  adTimers.push(setTimeout(()=>showAd(best), 7200));
+}
+
+/* ================================================================
+   FAKE ADVERTISEMENT EPILOGUE
+================================================================ */
+const RESTAURANTS = {
+  "PHỞ":{name:"PHỞ REAL™", tag:"You said you wanted comfort. We took that personally."},
+  "RAMEN":{name:"RAMEN-TIC™", tag:"For when your problems require noodles."},
+  "PASTA":{name:"PASTA LA VISTA™", tag:"Carbs have entered the chat."},
+  "PIZZA":{name:"PIZZA MY HEART™", tag:"You weren't going to cook anyway."},
+  "BURGER":{name:"BIG BITE™", tag:"Subtlety is overrated."},
+  "SUSHI":{name:"ROLL WITH IT™", tag:"Tiny pieces. Huge commitment."},
+  "TACOS":{name:"TACO 'BOUT IT™", tag:"Your day was chaotic. Your dinner can be too."},
+  "CURRY":{name:"CURRY ON™", tag:"You wanted flavor. We understood the assignment."},
+  "GRAIN BOWL":{name:"LEAF IT TO US™", tag:"Look at you. Making responsible decisions."},
+  "SANDWICH":{name:"BETWEEN BREAD™", tag:"Technically a meal. Emotionally a solution."},
+  "DUMPLINGS":{name:"DUMP & ROLL™", tag:"One is never enough."},
+  "RICE BOWL":{name:"BOWL MOVEMENT™", tag:"Everything you need. In one bowl."},
+  "FRIED CHICKEN":{name:"CLUCK AROUND™", tag:"You deserve the crunch."},
+  "BURRITO":{name:"WRAP STAR™", tag:"We've wrapped up your decision-making for today."},
+  "HOT POT":{name:"HOT POTATO™", tag:"This meal requires commitment."},
+  "BIBIMBAP":{name:"MIXED FEELINGS™", tag:"Stir everything together and call it balance."},
+  "BRUNCH PANCAKES":{name:"BRUNCH PLEASE™", tag:"It's 4 PM. Who cares?"},
+  "KEBAB":{name:"WRAP GOD™", tag:"Technically street food. Spiritually a lifestyle."},
+  "TOM YUM":{name:"SOUPER THAI™", tag:"Sour. Spicy. Slightly unhinged."},
+  "DESSERT":{name:"THIS COUNTS AS DINNER™", tag:"We won't tell anyone."},
+};
+
+const AD_CTAS = [
+  "ORDER MY DESTINY →","FEED ME","YES, CHEF","I ACCEPT MY FATE",
+  "SEND NOODLES","TAKE MY MONEY","I HAVE MADE MY DECISION","MAKE IT HAPPEN",
+];
+
+const AD_DISCLAIMERS = [
+  "FEEDME is not legally responsible for your dinner decisions.",
+  "Results based on highly questionable science.",
+  "No actual restaurant was consulted in the making of this decision.",
+  "This restaurant exists purely in your imagination. And ours.",
+  "Any resemblance to real food is intentional. Any resemblance to real service is not.",
+];
+
+const AD_BADGES = ["✨ PERSONALLY SELECTED FOR YOU ✨","🔥 EXCLUSIVE FEEDME DEAL 🔥","👑 BECAUSE WE KNOW YOU 👑"];
+
+/* build a personalized ad line from the session's accumulated weights */
+function adPersonalLine(){
+  const sum = {};
+  for(const p of picks) for(const [attr,w] of Object.entries(p.w)) sum[attr] = (sum[attr]||0)+w;
+  const lines = [];
+  if((sum.filling||0) >= 8) lines.push("Ready in {min} minutes because apparently you cannot wait.");
+  if((sum.effort||0) <= -5) lines.push("Delivered directly to the place you've refused to leave.");
+  if((sum.cost||0) <= -3) lines.push("Affordable enough that your bank account won't block you.");
+  if((sum.cost||0) >= 5) lines.push("Price is no object, and honestly? Same energy.");
+  if((sum.adventure||0) >= 6) lines.push("You said surprise you. Don't blame us.");
+  if((sum.comfort||0) >= 8) lines.push("Warm, soft, and emotionally available. Unlike your ex.");
+  if((sum.energy||0) >= 6) lines.push("No cooking. No thinking. Just eat.");
+  if((sum.spicy||0) >= 8) lines.push("Comes with free regret at no extra charge.");
+  if((sum.social||0) >= 6) lines.push("Big enough to share. You won't share.");
+  if((sum.fresh||0) >= 8) lines.push("Contains vegetables. Your body will be shocked.");
+  if(lines.length) return pick(lines).replace("{min}", 12+Math.floor(Math.random()*9));
+  return "Statistically your best possible dinner. Don't overthink it.";
+}
+
+let adTimers = [];
+function clearAdTimers(){ adTimers.forEach(t=>{clearTimeout(t);clearInterval(t);}); adTimers=[]; }
+
+function showAd(food){
+  const r = RESTAURANTS[food.name];
+  $("ad-badge").textContent = pick(AD_BADGES);
+  $("ad-emoji").textContent = food.emoji;
+  $("ad-restaurant").textContent = r.name;
+  $("ad-tagline").textContent = r.tag;
+  const rating = (4.6 + Math.random()*0.4).toFixed(1);
+  $("ad-stars").textContent = "★★★★★";
+  $("ad-rating").textContent = rating + " (" + (200+Math.floor(Math.random()*900)) + "+)";
+  const lo = 12 + Math.floor(Math.random()*15);
+  $("ad-time").textContent = `${lo}–${lo+9} min`;
+  $("ad-personal").textContent = adPersonalLine();
+  $("btn-ad").textContent = pick(AD_CTAS);
+  $("ad-confirm").textContent = "";
+  $("btn-again").style.display = "none";
+  $("btn-ad").style.display = "";
+  $("ad-disclaimer").textContent = pick(AD_DISCLAIMERS);
+  // restart entry animations
+  for(const id of ["ad-emoji"]){
+    const el = $(id);
+    el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
+  }
+  SFX.swoosh();
+  show("screen-ad");
+}
+
+$("btn-ad").onclick = function(){
+  this.style.display = "none";
+  SFX.ding();
+  const c = $("ad-confirm");
+  c.textContent = "ORDER CONFIRMED.";
+  adTimers.push(setTimeout(()=>{
+    c.textContent = pick(["Just kidding. 😭","Your food has been emotionally dispatched.","Order sent to a kitchen that does not exist. 🫠"]);
+    SFX.timeout();
+    $("btn-again").style.display = "";
+  }, 1300));
+};
+
+$("btn-again").onclick = ()=>{ SFX.click(); clearAdTimers(); show("screen-title"); };
+
+$("btn-start").onclick = ()=>{ Audio2.startMusic(); SFX.start(); startGame(); };
+$("btn-done").onclick = ()=>{ SFX.done(); clearAdTimers(); show("screen-title"); };
+
+$("sound-toggle").onclick = function(){
+  Audio2.ensure();
+  const muted = Audio2.toggleMute();
+  this.textContent = muted ? "🔇" : "🔊";
+  this.classList.toggle("muted", muted);
+};
+
+/* floating decorative particles */
+const PARTICLES = ["🍜","🍕","🥟","🌮","🍣","🍰","🍔","🥗","🍛","🍪"];
+for(let i=0;i<12;i++){
+  const p = document.createElement("div");
+  p.className = "particle";
+  p.textContent = PARTICLES[i % PARTICLES.length];
+  p.style.left = Math.random()*100+"vw";
+  p.style.top = Math.random()*100+"vh";
+  p.style.animationDelay = (Math.random()*8)+"s";
+  p.style.animationDuration = (7+Math.random()*6)+"s";
+  document.body.appendChild(p);
+}
+</script>
+</body>
+</html>
